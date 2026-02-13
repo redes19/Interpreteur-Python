@@ -7,12 +7,14 @@ reserved={
         'else':'ELSE',
         'while':'WHILE',
         'for':'FOR',
+        'function':'FUNCTION',
+        'return':'RETURN',
  
         }
  
 tokens = [ 'NUMBER','MINUS', 'PLUS', 'PLUSPLUS', 'TIMES','DIVIDE', 'LPAREN',
           'RPAREN', 'OR', 'AND', 'SEMI', 'EGAL', 'NAME', 'INF', 'SUP',
-          'EGALEGAL','INFEG', 'LACC', 'RACC']+ list(reserved.values())
+          'EGALEGAL','INFEG', 'LACC', 'RACC', 'COMMA']+ list(reserved.values())
  
 t_PLUS = r'\+' 
 t_PLUSPLUS = r'\+\+'
@@ -32,6 +34,7 @@ t_INFEG = r'\<\='
 t_EGALEGAL = r'\=\='
 t_LACC = r'\{'
 t_RACC = r'\}'
+t_COMMA = r','
  
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -79,13 +82,37 @@ def p_bloc(p):
     else : 
         p[0] = ('bloc', 'empty', p[1])
 
+def p_statement_function_whith_no_params(p):
+    'statement : FUNCTION NAME LPAREN RPAREN LACC bloc RACC'
+    p[0] = ('function', p[2], [], p[6])
+
+def p_statement_function_whith_params(p):
+    'statement : FUNCTION NAME LPAREN params RPAREN LACC bloc RACC'
+    p[0] = ('function', p[2], p[4], p[7])
+
+def p_params(p):
+    '''params : params COMMA NAME
+    | NAME'''
+    if len(p) == 4:
+        p[0] = ('params', p[1], p[3])
+    else:
+        p[0] = ('params', 'empty', p[1])
+
 def p_statement_if(p):
     'statement : IF LPAREN expression RPAREN LACC bloc RACC'
-    p[0] = ('if', p[3], p[6])
+    p[0] = ('if', p[3], p[6], None) # None pour if sans else
+
+def p_statement_if_else(p):
+    'statement : IF LPAREN expression RPAREN LACC bloc RACC ELSE LACC bloc RACC'
+    p[0] = ('if', p[3], p[6], p[10])
 
 def p_statement_while(p):
     'statement : WHILE LPAREN expression RPAREN LACC bloc RACC'
     p[0] = ('while', p[3], p[6])
+
+def p_statement_for(p):
+    'statement : FOR LPAREN statement SEMI expression SEMI statement RPAREN LACC bloc RACC'
+    p[0] = ('for', p[3], p[5], p[7], p[10])
  
 def p_statement_expr(p): 
     'statement : PRINT LPAREN expression RPAREN'
@@ -134,7 +161,6 @@ def p_expression_binop_plusplus(p):
  
 def p_expression_binop_times(p): 
     'expression : expression TIMES expression' 
-    #p[0] = p[1] * p[3] 
     p[0] = ('*', p[1], p[3])
  
 def p_expression_binop_divide_and_minus(p): 
@@ -153,7 +179,6 @@ def p_expression_number(p):
  
 def p_expression_name(p): 
     'expression : NAME' 
-    #p[0] = names[p[1]]
     p[0] = p[1]
  
 def p_error(p):    print("Syntax error in input!")
@@ -174,9 +199,19 @@ def evalinst(tree):
     elif tree[0] == 'if':
         if evalexpr(tree[1]):
             evalinst(tree[2])
+        elif tree[3] is not None:
+            evalinst(tree[3])
     elif tree[0] == 'while':
         while evalexpr(tree[1]):
             evalinst(tree[2])
+    elif tree[0] == '++':    
+        evalexpr(tree) 
+    elif tree[0] == 'for':
+        evalinst(tree[1])
+        while evalexpr(tree[2]) :
+            evalinst(tree[4])
+            evalinst(tree[3])
+
     
 
 
@@ -209,9 +244,14 @@ def evalexpr(tree):
     elif tree[0] == '>':
         return evalexpr(tree[1]) > evalexpr(tree[2])
     elif tree[0] == '++':
-        val = evalexpr(tree[1])
-        names[tree[1]] += 1
-        return val
+        var_name = tree[1]
+        if type(var_name) != str:
+            raise Exception("++ s'aplique que a des variables")
+        if var_name not in names:
+            raise Exception("Variable %s not defined" % tree[1])
+        old_value = names[var_name]
+        names[var_name] += 1
+        return old_value
 
 
         
