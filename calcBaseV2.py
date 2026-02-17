@@ -61,6 +61,8 @@ import ply.lex as lex
 lex.lex()
  
 names={}
+functions = {}
+
 precedence = ( 
         ('left','OR' ), 
         ('left','AND'), 
@@ -90,13 +92,21 @@ def p_statement_function_whith_params(p):
     'statement : FUNCTION NAME LPAREN params RPAREN LACC bloc RACC'
     p[0] = ('function', p[2], p[4], p[7])
 
+# def p_params(p):
+#     '''params : params COMMA NAME
+#     | NAME'''
+#     if len(p) == 4:
+#         p[0] = ('params', p[1], p[3])
+#     else:
+#         p[0] = ('params', 'empty', p[1])
+
 def p_params(p):
     '''params : params COMMA NAME
     | NAME'''
     if len(p) == 4:
-        p[0] = ('params', p[1], p[3])
+        p[0] = p[1] + [p[3]]
     else:
-        p[0] = ('params', 'empty', p[1])
+        p[0] = [p[1]]
 
 def p_statement_if(p):
     'statement : IF LPAREN expression RPAREN LACC bloc RACC'
@@ -211,7 +221,13 @@ def evalinst(tree):
         while evalexpr(tree[2]) :
             evalinst(tree[4])
             evalinst(tree[3])
+    elif tree[0] == 'function':
+        func_name = tree[1]
+        func_params = tree[2]
+        func_bloc = tree[3]
 
+        functions[func_name] = (func_params, func_bloc)
+        print(f"Fonction '{func_name}' définie avec {len(func_params)} paramètre(s)")
     
 
 
