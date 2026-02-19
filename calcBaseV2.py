@@ -92,21 +92,13 @@ def p_statement_function_whith_params(p):
     'statement : FUNCTION NAME LPAREN params RPAREN LACC bloc RACC'
     p[0] = ('function', p[2], p[4], p[7])
 
-# def p_params(p):
-#     '''params : params COMMA NAME
-#     | NAME'''
-#     if len(p) == 4:
-#         p[0] = ('params', p[1], p[3])
-#     else:
-#         p[0] = ('params', 'empty', p[1])
-
 def p_params(p):
     '''params : params COMMA NAME
     | NAME'''
     if len(p) == 4:
-        p[0] = p[1] + [p[3]]
+        p[0] = ('params', p[1], p[3])
     else:
-        p[0] = [p[1]]
+        p[0] = ('params', 'empty', p[1])
 
 def p_statement_if(p):
     'statement : IF LPAREN expression RPAREN LACC bloc RACC'
@@ -135,6 +127,22 @@ def p_statement_expr2(p):
 def p_statement_assign(p):
     'statement : NAME EGAL expression'
     p[0] = ('assign', p[1], p[3])
+
+# Grammaire pour appel de fonction
+def p_expression_call(p):
+    'expression : NAME LPAREN args RPAREN'
+    p[0] = ('call', p[1], p[3])
+
+def p_statement_args(p) :
+    ''' args : args COMMA expression
+        | expression
+        | '''
+    if len(p) == 4:
+        p[0] = ('args', p[1], p[3])
+    elif len(p) == 2 :
+        p[0] = ('args', 'empty', p[1])
+    else :
+        p[0] = ('empty',)
  
 def p_expression_binop_inf(p): 
     'expression : expression INF expression' 
@@ -195,7 +203,7 @@ def p_error(p):    print("Syntax error in input!")
 
 
 def evalinst(tree):
-    print('evalinst de', tree)
+    # print('evalinst de', tree)
     if tree == 'empty':
         return
     assert type(tree) is tuple
@@ -228,11 +236,13 @@ def evalinst(tree):
 
         functions[func_name] = (func_params, func_bloc)
         print(f"Fonction '{func_name}' définie avec {len(func_params)} paramètre(s)")
+    elif tree[0] == 'call':
+        evalexpr(tree)
     
 
 
 def evalexpr(tree):
-    print("evalexpr de ", tree)
+    # print("evalexpr de ", tree)
     if type(tree) == int:
         return tree
     elif type(tree) == bool:
@@ -268,7 +278,19 @@ def evalexpr(tree):
         old_value = names[var_name]
         names[var_name] += 1
         return old_value
+    elif tree[0] == 'call':
+        func_name = tree[1]
+        args_tree = tree[2]
 
+        if func_name not in functions:
+            raise Exception(f"Fonction '{func_name}' undefine")
+
+        print(f"Appel de la fonction '{func_name}' avec comme args'{args_tree}'")
+
+        func_params, func_body = functions[func_name]
+        evalinst(func_body)
+
+        return None
 
         
  
