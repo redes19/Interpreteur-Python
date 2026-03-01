@@ -3,6 +3,10 @@ __pycache__/
 parsetab.py
 *.pyc
 Digraph.gv
+# Fichiers générés par Graphviz et PLY
+Digraph.gv
+Digraph.gv.pdf
+parser.out
 # Fichiers temporaires ou générés
 *.log
 *.tmp
