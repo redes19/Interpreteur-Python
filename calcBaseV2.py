@@ -72,7 +72,7 @@ precedence = (
         )
 def p_start(p):
     'start : Linst'
-    p[0] = ('PROG', ('function', p[1][0]), ('main', p[1][1]))
+    p[0] = ('PROG', ('fonctions', p[1][0]), ('main', p[1][1]))
     print(p[0])
     printTreeGraph(p[0])
     evalinst(p[0])
@@ -83,12 +83,12 @@ def p_Linst(p):
     if len(p) == 4 :
         # décomposition
         funcs, main = p[1]
-        if p[2][0] == 'function' : 
+        if is_function_def(p[2]): 
             p[0] = (('Inst', funcs, p[2]), main)
         else : 
             p[0] = (funcs, ('Inst', main, p[2]))
     else : 
-        if p[1][0] == 'function' :
+        if is_function_def(p[1]):
             p[0] = (p[1], 'empty')
         else :
             p[0] = ('empty', p[1])
@@ -104,11 +104,16 @@ def p_bloc(p):
 
 def p_statement_function_whith_no_params(p):
     'statement : FUNCTION NAME LPAREN RPAREN LACC bloc RACC'
-    p[0] = ('function', p[2], [], p[6])
+    p[0] = (p[2], ('params', 'empty'), ('Inst', p[6]))
 
 def p_statement_function_whith_params(p):
     'statement : FUNCTION NAME LPAREN params RPAREN LACC bloc RACC'
-    p[0] = ('function', p[2], p[4], p[7])
+    p[0] = (p[2], ('params', tuple(p[4])), ('Inst', p[7]))
+
+def is_function_def(t):
+    """Vérifie si un tuple est une définition de fonction"""
+    return (isinstance(t, tuple) and len(t) >= 2 and 
+            isinstance(t[1], tuple) and t[1][0] == 'params')
 
 def p_params(p):
     '''params : params COMMA NAME
@@ -228,7 +233,7 @@ def evalinst(tree):
     if tree[0] == 'PROG':
         evalinst(tree[1])  # fonctions
         evalinst(tree[2])  # main
-    elif tree[0] == 'function' and len(tree) == 2:
+    elif tree[0] == 'fonctions':
         # Container de fonctions (pas une définition)
         evalinst(tree[1])
     elif tree[0] == 'main':
@@ -245,8 +250,10 @@ def evalinst(tree):
         names[tree[1]] = evalexpr(tree[2])
     elif tree[0] == 'if':
         if evalexpr(tree[1]):
+            print("[DEBUG] Branche IF")
             evalinst(tree[2])
         elif tree[3] is not None:
+            print("[DEBUG] Branche ELSE")
             evalinst(tree[3])
     elif tree[0] == 'while':
         while evalexpr(tree[1]):
@@ -258,13 +265,13 @@ def evalinst(tree):
         while evalexpr(tree[2]) :
             evalinst(tree[4])
             evalinst(tree[3])
-    elif tree[0] == 'function':
-        func_name = tree[1]
-        func_params = tree[2]  # Liste de noms de paramètres
-        func_bloc = tree[3]
+    elif is_function_def(tree):
+        func_name = tree[0]
+        func_params = tree[1][1]  # tree[1] = ('params', ...)
+        func_bloc = tree[2][1] if tree[2][0] == 'Inst' else tree[2]
 
         functions[func_name] = (func_params, func_bloc)
-        print(f"Fonction '{func_name}' définie avec {len(func_params)} paramètre(s)")
+        print(f"Fonction '{func_name}' définie")
     elif tree[0] == 'call':
         evalexpr(tree)
     
@@ -314,7 +321,7 @@ def evalexpr(tree):
         if func_name not in functions:
             raise Exception(f"Fonction '{func_name}' undefine")
 
-        print(f"Appel de la fonction '{func_name}' avec comme args'{args_tree}'")
+        print(f"Appel de la fonction '{func_name}' avec comme args'{args_list}'")
 
         func_params, func_body = functions[func_name]
         evalinst(func_body)
