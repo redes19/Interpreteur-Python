@@ -1,0 +1,10 @@
+# Fichiers et dossiers à ignorer pour ce projet Python
+__pycache__/
+parsetab.py
+*.pyc
+Digraph.gv
+# Fichiers temporaires ou générés
+*.log
+*.tmp
+# Dossier de cache
+.cache/
