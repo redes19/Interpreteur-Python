@@ -96,13 +96,13 @@ def p_params(p):
     '''params : params COMMA NAME
     | NAME'''
     if len(p) == 4:
-        p[0] = ('params', p[1], p[3])
+        p[0] = p[1] + [p[3]]
     else:
-        p[0] = ('params', 'empty', p[1])
+        p[0] = [p[1]]
 
 def p_statement_if(p):
     'statement : IF LPAREN expression RPAREN LACC bloc RACC'
-    p[0] = ('if', p[3], p[6], None) # None pour if sans else
+    p[0] = ('if', p[3], p[6], None)
 
 def p_statement_if_else(p):
     'statement : IF LPAREN expression RPAREN LACC bloc RACC ELSE LACC bloc RACC'
@@ -138,11 +138,11 @@ def p_statement_args(p) :
         | expression
         | '''
     if len(p) == 4:
-        p[0] = ('args', p[1], p[3])
+        p[0] = p[1] + [p[3]]
     elif len(p) == 2 :
-        p[0] = ('args', 'empty', p[1])
+        p[0] = [p[1]]
     else :
-        p[0] = ('empty',)
+        p[0] = []
  
 def p_expression_binop_inf(p): 
     'expression : expression INF expression' 
@@ -231,7 +231,7 @@ def evalinst(tree):
             evalinst(tree[3])
     elif tree[0] == 'function':
         func_name = tree[1]
-        func_params = tree[2]
+        func_params = tree[2]  # Liste de noms de paramètres
         func_bloc = tree[3]
 
         functions[func_name] = (func_params, func_bloc)
@@ -280,7 +280,7 @@ def evalexpr(tree):
         return old_value
     elif tree[0] == 'call':
         func_name = tree[1]
-        args_tree = tree[2]
+        args_list = tree[2]  # Liste d'arguments
 
         if func_name not in functions:
             raise Exception(f"Fonction '{func_name}' undefine")
