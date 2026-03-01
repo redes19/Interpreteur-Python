@@ -71,18 +71,36 @@ precedence = (
         ('left','TIMES', 'DIVIDE'), 
         )
 def p_start(p):
-    'start : bloc'
-    print(p[1])
-    printTreeGraph(p[1])
-    evalinst(p[1])
- 
+    'start : Linst'
+    p[0] = ('PROG', ('function', p[1][0]), ('main', p[1][1]))
+    print(p[0])
+    printTreeGraph(p[0])
+    evalinst(p[0])
+
+def p_Linst(p):
+    '''Linst : Linst statement SEMI
+        | statement SEMI'''
+    if len(p) == 4 :
+        # décomposition
+        funcs, main = p[1]
+        if p[2][0] == 'function' : 
+            p[0] = (('Inst', funcs, p[2]), main)
+        else : 
+            p[0] = (funcs, ('Inst', main, p[2]))
+    else : 
+        if p[1][0] == 'function' :
+            p[0] = (p[1], 'empty')
+        else :
+            p[0] = ('empty', p[1])
+
 def p_bloc(p):
     '''bloc : bloc statement SEMI
     | statement SEMI'''
-    if len(p)==4  : 
+    if len(p) == 4:
         p[0] = ('bloc', p[1], p[2])
-    else : 
-        p[0] = ('bloc', 'empty', p[1])
+    else:
+        p[0] = p[1]
+
 
 def p_statement_function_whith_no_params(p):
     'statement : FUNCTION NAME LPAREN RPAREN LACC bloc RACC'
@@ -207,7 +225,18 @@ def evalinst(tree):
     if tree == 'empty':
         return
     assert type(tree) is tuple
-    if tree[0] == 'bloc' :
+    if tree[0] == 'PROG':
+        evalinst(tree[1])  # fonctions
+        evalinst(tree[2])  # main
+    elif tree[0] == 'function' and len(tree) == 2:
+        # Container de fonctions (pas une définition)
+        evalinst(tree[1])
+    elif tree[0] == 'main':
+        evalinst(tree[1])
+    elif tree[0] == 'Inst':
+        evalinst(tree[1])
+        evalinst(tree[2])
+    elif tree[0] == 'bloc':
         evalinst(tree[1])
         evalinst(tree[2])
     elif tree[0] == 'print':
