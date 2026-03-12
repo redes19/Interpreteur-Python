@@ -70,9 +70,10 @@ precedence = (
         ('left','PLUS', 'MINUS' ), 
         ('left','TIMES', 'DIVIDE'), 
         )
+
 def p_start(p):
     'start : Linst'
-    p[0] = ('PROG', ('fonctions', p[1][0]), ('main', p[1][1]))
+    p[0] = ('PROG', ('functions', p[1][0]), ('main', p[1][1]))
     print(p[0])
     printTreeGraph(p[0])
     evalinst(p[0])
@@ -110,11 +111,13 @@ def p_statement_function_whith_params(p):
     'statement : FUNCTION NAME LPAREN params RPAREN LACC bloc RACC'
     p[0] = (p[2], ('params', tuple(p[4])), ('Inst', p[7]))
 
+# JE SAIS PAS CE QUE SIGNIFIE CE COOOOOOOOOOOOOOOOOOOOOOOOOOODEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 def is_function_def(t):
-    """Vérifie si un tuple est une définition de fonction"""
+    """Vérifie si un tuple est une définition de function"""
     return (isinstance(t, tuple) and len(t) >= 2 and 
             isinstance(t[1], tuple) and t[1][0] == 'params')
 
+# A COMPRENDRE
 def p_params(p):
     '''params : params COMMA NAME
     | NAME'''
@@ -233,7 +236,7 @@ def evalinst(tree):
     if tree[0] == 'PROG':
         evalinst(tree[1])  # fonctions
         evalinst(tree[2])  # main
-    elif tree[0] == 'fonctions':
+    elif tree[0] == 'functions':
         # Container de fonctions (pas une définition)
         evalinst(tree[1])
     elif tree[0] == 'main':
