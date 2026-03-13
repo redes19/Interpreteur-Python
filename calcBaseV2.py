@@ -90,9 +90,9 @@ def p_Linst(p):
             p[0] = (funcs, ('Inst', main, p[2]))
     else : 
         if is_function_def(p[1]):
-            p[0] = (p[1], 'empty')
-        else :
-            p[0] = ('empty', p[1])
+            p[0] = (('Inst', 'empty', p[1]), 'empty')
+        else:
+            p[0] = ('empty', ('Inst', 'empty', p[1]))
 
 def p_bloc(p):
     '''bloc : bloc statement SEMI
@@ -111,13 +111,11 @@ def p_statement_function_whith_params(p):
     'statement : FUNCTION NAME LPAREN params RPAREN LACC bloc RACC'
     p[0] = (p[2], ('params', tuple(p[4])), ('Inst', p[7]))
 
-# JE SAIS PAS CE QUE SIGNIFIE CE COOOOOOOOOOOOOOOOOOOOOOOOOOODEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 def is_function_def(t):
     """Vérifie si un tuple est une définition de function"""
     return (isinstance(t, tuple) and len(t) >= 2 and 
             isinstance(t[1], tuple) and t[1][0] == 'params')
 
-# A COMPRENDRE
 def p_params(p):
     '''params : params COMMA NAME
     | NAME'''
@@ -271,7 +269,7 @@ def evalinst(tree):
     elif is_function_def(tree):
         func_name = tree[0]
         func_params = tree[1][1]  # tree[1] = ('params', ...)
-        func_bloc = tree[2][1] if tree[2][0] == 'Inst' else tree[2]
+        func_bloc = tree[2][1] 
 
         functions[func_name] = (func_params, func_bloc)
         print(f"Fonction '{func_name}' définie")
@@ -287,6 +285,8 @@ def evalexpr(tree):
     elif type(tree) == bool:
         return tree
     elif type(tree) == str:
+        if tree not in names:
+            raise Exception(f"Variable '{tree}' non définie")
         return names[tree]
     elif tree[0] == '+':
         return evalexpr(tree[1]) + evalexpr(tree[2])
