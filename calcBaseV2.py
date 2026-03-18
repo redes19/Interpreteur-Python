@@ -59,11 +59,6 @@ def t_error(t):
  
 import ply.lex as lex
 lex.lex()
- 
-# names={}
-
-functions = {}
-scopes = [{}]
 
 precedence = ( 
         ('left','OR' ), 
@@ -232,6 +227,11 @@ def p_error(p):    print("Syntax error in input!")
 ##############  Pile d'éxécution  #######################
 #########################################################
 
+# names={}
+
+functions = {}
+scopes = [{}]
+
 # Ajout un contexte au sommet de la pile
 def push_scope():
     scopes.append({})
@@ -243,7 +243,7 @@ def pop_scopes():
     scopes.pop()
 
 # Retourne le contexte au sommet de la pile
-def curretn_scopes():
+def current_scopes():
     scopes[-1]
 
 # Recherche une variable
