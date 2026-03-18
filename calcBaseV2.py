@@ -60,8 +60,10 @@ def t_error(t):
 import ply.lex as lex
 lex.lex()
  
-names={}
+# names={}
+
 functions = {}
+scopes = [{}]
 
 precedence = ( 
         ('left','OR' ), 
@@ -75,7 +77,7 @@ def p_start(p):
     'start : Linst'
     p[0] = ('PROG', ('functions', p[1][0]), ('main', p[1][1]))
     print(p[0])
-    printTreeGraph(p[0])
+    # printTreeGraph(p[0])
     evalinst(p[0])
 
 def p_Linst(p):
@@ -226,6 +228,55 @@ def p_expression_name(p):
 def p_error(p):    print("Syntax error in input!")
 
 
+#########################################################
+##############  Pile d'éxécution  #######################
+#########################################################
+
+# Ajout un contexte au sommet de la pile
+def push_scope():
+    scopes.append({})
+
+# retire un contexte au sommet de la pile
+def pop_scopes():
+    if len(scopes) == 1:
+        raise Exception("Impossible de dépiler")
+    scopes.pop()
+
+# Retourne le contexte au sommet de la pile
+def curretn_scopes():
+    scopes[-1]
+
+# Recherche une variable
+def get_var(name):
+    for scope in reversed(scopes):
+        if name in scope:
+            return scope[name]
+    raise Exception(f"Variable '{name}' non définit")
+
+# Vérifiesi variable existe
+def has_var(name):
+    for scope in reversed(scopes):
+        if name in scope:
+            return True
+    return False
+
+# # update une variable
+# def set_var(name, val):
+#     for scope in reversed(scopes):
+#         if name in scope:
+#             scope[name] = val
+#             return
+#     scopes[-1][name] = val
+
+def set_var(name, value):
+    """Assigne dans le scope actuel"""
+    scopes[-1][name] = value
+
+
+#########################################################
+#################  évaluation  ##########################
+#########################################################
+
 def evalinst(tree):
     # print('evalinst de', tree)
     if tree == 'empty':
@@ -235,7 +286,6 @@ def evalinst(tree):
         evalinst(tree[1])  # fonctions
         evalinst(tree[2])  # main
     elif tree[0] == 'functions':
-        # Container de fonctions (pas une définition)
         evalinst(tree[1])
     elif tree[0] == 'main':
         evalinst(tree[1])
@@ -248,7 +298,7 @@ def evalinst(tree):
     elif tree[0] == 'print':
         print("CALC > ", evalexpr(tree[1]))
     elif tree[0] == 'assign':
-        names[tree[1]] = evalexpr(tree[2])
+        set_var(tree[1], evalexpr(tree[2]))
     elif tree[0] == 'if':
         if evalexpr(tree[1]):
             print("[DEBUG] Branche IF")
@@ -274,7 +324,23 @@ def evalinst(tree):
         functions[func_name] = (func_params, func_bloc)
         print(f"Fonction '{func_name}' définie")
     elif tree[0] == 'call':
-        evalexpr(tree)
+        func_name = tree[1]
+        args = tree[2]
+
+        if func_name not in functions:
+            raise Exception(f"fonction '{func_name}' non défini")
+
+        func_params, func_body = functions[func_name]
+        push_scope()
+
+        try:
+            if func_params != 'empty':
+                for i, params_name in enumerate(func_params):
+                    set_var(params_name, evalexpr(args[i]))
+        
+            evalinst(func_body)
+        finally:
+            pop_scopes()
     
 
 
@@ -285,9 +351,9 @@ def evalexpr(tree):
     elif type(tree) == bool:
         return tree
     elif type(tree) == str:
-        if tree not in names:
+        if not has_var(tree):
             raise Exception(f"Variable '{tree}' non définie")
-        return names[tree]
+        return get_var(tree)
     elif tree[0] == '+':
         return evalexpr(tree[1]) + evalexpr(tree[2])
     elif tree[0] == '*':
@@ -310,12 +376,11 @@ def evalexpr(tree):
         return evalexpr(tree[1]) > evalexpr(tree[2])
     elif tree[0] == '++':
         var_name = tree[1]
-        if type(var_name) != str:
-            raise Exception("++ s'aplique que a des variables")
-        if var_name not in names:
-            raise Exception("Variable %s not defined" % tree[1])
-        old_value = names[var_name]
-        names[var_name] += 1
+        if not has_var(var_name):
+            raise Exception(f"Variable '{var_name}' non définie")
+
+        old_value = get_var(var_name)
+        set_var(var_name, old_value + 1)
         return old_value
     elif tree[0] == 'call':
         func_name = tree[1]
