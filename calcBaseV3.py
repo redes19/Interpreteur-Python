@@ -25,7 +25,7 @@ except Exception:
 # ---------------------------------------------------------------------------
 
 PREFIXE_CONSOLE = "calc > "
-AFFICHER_GRAPHVIZ = True  # Doit rester désactivé par défaut (sujet)
+AFFICHER_GRAPHVIZ = False  # Doit rester désactivé par défaut (sujet)
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +376,16 @@ def p_expression_binaire_ou(production):
     "expression : expression OR expression"
     production[0] = ("or", production[1], production[3])
 
+# Ajout : appel de fonction comme expression (sans paramètres)
+def p_expression_appel_fonction_sans_parametres(production):
+    "expression : NAME LPAREN RPAREN"
+    production[0] = ("call", production[1])
+
+# Ajout : appel de fonction comme expression (avec paramètres)
+def p_expression_appel_fonction_avec_parametres(production):
+    "expression : NAME LPAREN liste_expressions RPAREN"
+    production[0] = ("callParam", production[1], production[3])
+
 
 def p_error(production):
     if production is None:
@@ -510,6 +520,10 @@ def enregistrer_fonctions(arbre_fonctions: Any) -> None:
 
     nom_fonction, noeud_parametres, corps = definition
     fonctions[nom_fonction] = (noeud_parametres, corps)
+
+# ---------------------------------------------------------------------------
+# Evaluation de l'arbre
+# ---------------------------------------------------------------------------
 
 
 def executer_instruction(arbre: Any) -> None:
