@@ -39,6 +39,9 @@ mots_reserves = {
     "elif": "ELIF",
     "while": "WHILE",
     "for": "FOR",
+    "push": "PUSH",
+    "pop": "POP",
+    "len:": "LEN",
     "fonction": "FUNCTION",   # IMPORTANT : le cours utilise "fonction"
     "function": "FUNCTION",   # on accepte aussi "function"
     "return": "RETURN",
@@ -66,6 +69,8 @@ tokens = [
     "COMMA",
     "SEMI",
     "EGAL",
+    "LBRACKET",
+    "RBRACKET",
 ] + list(set(mots_reserves.values()))
 
 t_PLUSPLUS = r"\+\+"
@@ -83,6 +88,8 @@ t_AND = r"\&"
 
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
+t_LBRACKET = r"\["
+t_RBRACKET = r"\]"
 t_LACC = r"\{"
 t_RACC = r"\}"
 t_COMMA = r","
@@ -232,6 +239,18 @@ def p_instruction_simple_return_expression(production):
 def p_instruction_simple_return_vide(production):
     "instruction_simple : RETURN"
     production[0] = ("return", "empty")
+
+def p_instruction_simple_affectation_index_tableau(production):
+    "instruction_simple: NAME LBRACKET expression RBRACKET EGAL expression"
+    production[0] = ("assign_index_tab", production[1], production[3], production[6])
+
+def p_instruction_simple_push_tableau(production):
+    "instruction_simple: PUSH LPAREN NAME COMA expression RPAREN"
+    production[0] = ("push", production[3], production[5])
+
+def p_instruction_simple_pop_tableau(production):
+    "instruction_simple: POP LPAREN NAME RPAREN"
+    production[0] = ("pop_inst", production[3])
 
 
 # -----------------------
@@ -396,6 +415,26 @@ def p_expression_appel_fonction_sans_parametres(production):
 def p_expression_appel_fonction_avec_parametres(production):
     "expression : NAME LPAREN liste_expressions RPAREN"
     production[0] = ("callParam", production[1], production[3])
+
+def p_expression_tableau_vide(production):
+    "expression: LBRACKET RBRACKET"
+    production[0] = ("array", "empty")
+
+def p_expression_tableau(production):
+    "expression: LBRACKET expression RBRACKET"
+    production[0] = ("array", production[2])
+
+def p_expression_index_tableau(production):
+    "expression: NAME LBRACKET expression RBRACKET"
+    production[0] = ("index", production[1], production[3])
+
+def p_expression_len_tableau(production):
+    "expression: LEN LPAREN NAME RPAREN"
+    production[0] = ("len", production[3])
+
+def p_p_expression_len_tableau_pop_tableau(production):
+    "p_expression_len_tableau: POP LPAREN NAME RPAREN"
+    production[0] = ("pop_exp", production[3])
 
 
 def p_error(production):
