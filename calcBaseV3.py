@@ -461,7 +461,7 @@ class SignalRetour(Exception):
 
 pile_des_contextes: List[Dict[str, Any]] = [{}]
 fonctions: Dict[str, Tuple[Any, Any]] = {}
-
+tableaux: Dict[str, list] = {}
 
 def lire_variable(nom: str) -> Any:
     for contexte in reversed(pile_des_contextes):
@@ -645,6 +645,14 @@ def executer_instruction(arbre: Any) -> None:
         ancienne_valeur = lire_variable(nom_variable)
         ecrire_variable(nom_variable, ancienne_valeur + 1)
         return
+
+    if etiquette == "push":
+        nom_tab = arbre[1]
+        valeur = evaluer_expression(arbre[2])
+        if nom_tab not in tableaux:
+            raise NameError(f"Tableau non déclaré : '{nom_tab}'")
+        tableaux[nom_tab].append(valeur)
+
 
     # Une définition de fonction dans main ne s'exécute pas ici (elles sont enregistrées au départ)
     if est_definition_fonction(arbre):
