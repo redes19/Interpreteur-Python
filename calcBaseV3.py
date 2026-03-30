@@ -36,6 +36,7 @@ mots_reserves = {
     "print": "PRINT",
     "if": "IF",
     "else": "ELSE",
+    "elif": "ELIF",
     "while": "WHILE",
     "for": "FOR",
     "fonction": "FUNCTION",   # IMPORTANT : le cours utilise "fonction"
@@ -245,6 +246,16 @@ def p_instruction_composee_if(production):
 def p_instruction_composee_if_else(production):
     "instruction_composee : IF LPAREN expression RPAREN bloc ELSE bloc"
     production[0] = ("if", production[3], production[5], production[7])
+
+def p_instruction_composee_if_elif(production):
+    "instruction_composee : IF LPAREN expression RPAREN bloc ELIF LPAREN expression RPAREN bloc"
+    branch_elif = ("if", production[8], production[10], "empty")
+    production[0] = ("if", production[3], production[5], branch_elif)
+
+def p_instruction_composee_if_elif_else(production):
+    "instruction_composee : IF LPAREN expression RPAREN bloc ELIF LPAREN expression RPAREN bloc ELSE bloc"
+    branch_elif = ("if", production[8], production[10], production[12])
+    production[0] = ("if", production[3], production[5], branch_elif) 
 
 
 def p_instruction_composee_while(production):
