@@ -432,7 +432,7 @@ def p_expression_len_tableau(production):
     "expression: LEN LPAREN NAME RPAREN"
     production[0] = ("len", production[3])
 
-def p_p_expression_len_tableau_pop_tableau(production):
+def p_expression_len_tableau_pop_tableau(production):
     "p_expression_len_tableau: POP LPAREN NAME RPAREN"
     production[0] = ("pop_exp", production[3])
 
@@ -652,6 +652,12 @@ def executer_instruction(arbre: Any) -> None:
         if nom_tab not in tableaux:
             raise NameError(f"Tableau non déclaré : '{nom_tab}'")
         tableaux[nom_tab].append(valeur)
+        return
+
+    if etiquette == "assign_index_tab":
+        nom_tab = arbre[1]
+        idx = arbre[2]
+        valeur = arbre[3]
 
 
     # Une définition de fonction dans main ne s'exécute pas ici (elles sont enregistrées au départ)
