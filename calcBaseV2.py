@@ -12,13 +12,20 @@ reserved={
  
         }
  
-tokens = [ 'NUMBER','MINUS', 'PLUS', 'PLUSPLUS', 'TIMES','DIVIDE', 'LPAREN',
+tokens = [ 'NUMBER','MINUS', 'MINUSMINUS', 'PLUS', 'PLUSPLUS', 'TIMES','DIVIDE', 'LPAREN',
           'RPAREN', 'OR', 'AND', 'SEMI', 'EGAL', 'NAME', 'INF', 'SUP',
           'EGALEGAL','INFEG', 'LACC', 'RACC', 'COMMA']+ list(reserved.values())
  
-t_PLUS = r'\+' 
+
 t_PLUSPLUS = r'\+\+'
-t_MINUS = r'-' 
+t_EGALEGAL = r'\=\='
+t_INFEG = r'\<\='
+
+t_PLUS = r'\+'
+t_EGAL = r'\='
+t_INF = r'\<'
+t_MINUSMINUS = r'\-\-'
+t_MINUS = r'-'
 t_TIMES = r'\*' 
 t_DIVIDE = r'/' 
 t_LPAREN = r'\(' 
@@ -26,12 +33,7 @@ t_RPAREN = r'\)'
 t_OR = r'\|'
 t_AND = r'\&'
 t_SEMI = r';'
-t_EGAL = r'\='
-#t_NAME = r'[a-zA-Z_][a-zA-Z_0-9]*'
-t_INF = r'\<'
 t_SUP = r'>'
-t_INFEG = r'\<\='
-t_EGALEGAL = r'\=\='
 t_LACC = r'\{'
 t_RACC = r'\}'
 t_COMMA = r','
@@ -84,6 +86,11 @@ def p_bloc(p):
     else : 
         p[0] = ('bloc', 'empty', p[1])
 
+def p_optsemi(p):
+    '''optsemi : SEMI
+               | '''
+    pass
+
 def p_statement_function_whith_no_params(p):
     'statement : FUNCTION NAME LPAREN RPAREN LACC bloc RACC'
     p[0] = ('function', p[2], [], p[6])
@@ -113,8 +120,8 @@ def p_statement_while(p):
     p[0] = ('while', p[3], p[6])
 
 def p_statement_for(p):
-    'statement : FOR LPAREN statement SEMI expression SEMI statement RPAREN LACC bloc RACC'
-    p[0] = ('for', p[3], p[5], p[7], p[10])
+    'statement : FOR LPAREN statement SEMI expression SEMI statement optsemi RPAREN LACC bloc RACC'
+    p[0] = ('for', p[3], p[5], p[7], p[11])
  
 def p_statement_expr(p): 
     'statement : PRINT LPAREN expression RPAREN'
@@ -173,8 +180,8 @@ def p_expression_binop_plus(p):
     'expression : expression PLUS expression' 
     p[0] = ('+', p[1], p[3])
 
-def p_expression_binop_plusplus(p):
-    'expression : expression PLUSPLUS'
+def p_expression_postfix_plusplus(p):
+    'expression : NAME PLUSPLUS'
     p[0] = ('++', p[1])
  
 def p_expression_binop_times(p): 
@@ -206,12 +213,14 @@ def evalinst(tree):
     # print('evalinst de', tree)
     if tree == 'empty':
         return
-    assert type(tree) is tuple
+    if type(tree) is not tuple:
+        evalexpr(tree)
+        return
     if tree[0] == 'bloc' :
         evalinst(tree[1])
         evalinst(tree[2])
     elif tree[0] == 'print':
-        print("CALC > ", evalexpr(tree[1]))
+        print("calc > ", evalexpr(tree[1]))
     elif tree[0] == 'assign':
         names[tree[1]] = evalexpr(tree[2])
     elif tree[0] == 'if':
@@ -248,6 +257,8 @@ def evalexpr(tree):
     elif type(tree) == bool:
         return tree
     elif type(tree) == str:
+        if tree not in names:
+            raise Exception(f"Variable '{tree}' non initialisée")
         return names[tree]
     elif tree[0] == '+':
         return evalexpr(tree[1]) + evalexpr(tree[2])
@@ -285,7 +296,7 @@ def evalexpr(tree):
         if func_name not in functions:
             raise Exception(f"Fonction '{func_name}' undefine")
 
-        print(f"Appel de la fonction '{func_name}' avec comme args'{args_tree}'")
+        print(f"Appel de la fonction '{func_name}' avec comme args'{args_list}'")
 
         func_params, func_body = functions[func_name]
         evalinst(func_body)
@@ -297,5 +308,5 @@ def evalexpr(tree):
 import ply.yacc as yacc
 yacc.yacc()
 # s = 'print(1+2);x=2+1;'
-s = input('calc > ')
+s = 'function carre(){};'
 yacc.parse(s)
