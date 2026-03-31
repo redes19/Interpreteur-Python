@@ -715,7 +715,11 @@ def evaluer_expression(arbre: Any) -> Any:
     if etiquette == "index":
         tableau = lire_variable(arbre[1])
         index = evaluer_expression(arbre[2])
-        return tableau[index]
+        try:
+            return tableau[index]
+        except IndexError:
+            print(f"{PREFIXE_CONSOLE}Erreur: index {index} est hors limites du tableau '{arbre[1]}'")
+            return None
 
     if etiquette == "pop_exp":
         tableau = lire_variable(arbre[1])
