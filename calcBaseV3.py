@@ -41,7 +41,7 @@ mots_reserves = {
     "for": "FOR",
     "push": "PUSH",
     "pop": "POP",
-    "len:": "LEN",
+    "len": "LEN",
     "fonction": "FUNCTION",   # IMPORTANT : le cours utilise "fonction"
     "function": "FUNCTION",   # on accepte aussi "function"
     "return": "RETURN",
@@ -71,6 +71,7 @@ tokens = [
     "EGAL",
     "LBRACKET",
     "RBRACKET",
+    "DOT",
 ] + list(set(mots_reserves.values()))
 
 t_PLUSPLUS = r"\+\+"
@@ -95,6 +96,7 @@ t_RACC = r"\}"
 t_COMMA = r","
 t_SEMI = r";"
 t_EGAL = r"="
+t_DOT = r"\."
 
 
 def t_NAME(production):
@@ -241,15 +243,15 @@ def p_instruction_simple_return_vide(production):
     production[0] = ("return", "empty")
 
 def p_instruction_simple_affectation_index_tableau(production):
-    "instruction_simple: NAME LBRACKET expression RBRACKET EGAL expression"
+    "instruction_simple : NAME LBRACKET expression RBRACKET EGAL expression"
     production[0] = ("assign_index_tab", production[1], production[3], production[6])
 
 def p_instruction_simple_push_tableau(production):
-    "instruction_simple: PUSH LPAREN NAME COMA expression RPAREN"
+    "instruction_simple : PUSH LPAREN NAME COMMA expression RPAREN"
     production[0] = ("push", production[3], production[5])
 
 def p_instruction_simple_pop_tableau(production):
-    "instruction_simple: POP LPAREN NAME RPAREN"
+    "instruction_simple : POP LPAREN NAME RPAREN"
     production[0] = ("pop_inst", production[3])
 
 
@@ -320,7 +322,6 @@ def p_liste_parametres_base(production):
 def p_liste_parametres_recursion(production):
     "liste_parametres : liste_parametres COMMA NAME"
     production[0] = ("param", production[1], production[3])
-
 
 # -----------------------
 # Liste d'expressions (arguments) : nœuds 'exp'
@@ -417,23 +418,23 @@ def p_expression_appel_fonction_avec_parametres(production):
     production[0] = ("callParam", production[1], production[3])
 
 def p_expression_tableau_vide(production):
-    "expression: LBRACKET RBRACKET"
+    "expression : LBRACKET RBRACKET"
     production[0] = ("array", "empty")
 
 def p_expression_tableau(production):
-    "expression: LBRACKET expression RBRACKET"
+    "expression : LBRACKET liste_expressions RBRACKET"
     production[0] = ("array", production[2])
 
 def p_expression_index_tableau(production):
-    "expression: NAME LBRACKET expression RBRACKET"
+    "expression : NAME LBRACKET expression RBRACKET"
     production[0] = ("index", production[1], production[3])
 
 def p_expression_len_tableau(production):
-    "expression: LEN LPAREN NAME RPAREN"
+    "expression : LEN DOT NAME"
     production[0] = ("len", production[3])
 
-def p_expression_len_tableau_pop_tableau(production):
-    "p_expression_len_tableau: POP LPAREN NAME RPAREN"
+def p_expression_tableau_pop_tableau(production):
+    "expression : POP LPAREN NAME RPAREN"
     production[0] = ("pop_exp", production[3])
 
 
@@ -461,7 +462,6 @@ class SignalRetour(Exception):
 
 pile_des_contextes: List[Dict[str, Any]] = [{}]
 fonctions: Dict[str, Tuple[Any, Any]] = {}
-tableaux: Dict[str, list] = {}
 
 def lire_variable(nom: str) -> Any:
     for contexte in reversed(pile_des_contextes):
@@ -647,18 +647,21 @@ def executer_instruction(arbre: Any) -> None:
         return
 
     if etiquette == "push":
-        nom_tab = arbre[1]
-        valeur = evaluer_expression(arbre[2])
-        if nom_tab not in tableaux:
-            raise NameError(f"Tableau non déclaré : '{nom_tab}'")
-        tableaux[nom_tab].append(valeur)
+        tab = lire_variable(arbre[1])
+        tab.append(evaluer_expression(arbre[2]))
         return
 
     if etiquette == "assign_index_tab":
-        nom_tab = arbre[1]
-        idx = arbre[2]
-        valeur = arbre[3]
-
+        tableau = lire_variable(arbre[1])
+        index = evaluer_expression(arbre[2])
+        valeur = evaluer_expression(arbre[3])
+        tableau[index] = valeur
+        return
+        
+    if etiquette == "pop_inst":
+        tableau = lire_variable(arbre[1])
+        tableau.pop()
+        return 
 
     # Une définition de fonction dans main ne s'exécute pas ici (elles sont enregistrées au départ)
     if est_definition_fonction(arbre):
@@ -702,6 +705,26 @@ def evaluer_expression(arbre: Any) -> Any:
         return evaluer_expression(arbre[1]) == evaluer_expression(arbre[2])
     if etiquette == ">":
         return evaluer_expression(arbre[1]) > evaluer_expression(arbre[2])
+
+    if etiquette == "array":
+        if len(arbre) == 1:
+            return []
+        elements = extraire_arguments_depuis_exp_chain(arbre[1])
+        return elements
+
+    if etiquette == "index":
+        tableau = lire_variable(arbre[1])
+        index = evaluer_expression(arbre[2])
+        return tableau[index]
+
+    if etiquette == "pop_exp":
+        tableau = lire_variable(arbre[1])
+        return tableau.pop()
+
+    if etiquette == "len":
+        tableau = lire_variable(arbre[1])
+        return len(tableau)
+
 
     if etiquette == "call":
         nom_fonction = arbre[1]
