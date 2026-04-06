@@ -546,6 +546,8 @@ def extraire_parametres_depuis_param_chain(noeud_parametres: Any) -> List[str]:
 
 
 def extraire_arguments_depuis_exp_chain(noeud_expressions: Any) -> List[Any]:
+    if noeud_expressions == "empty":
+        return []
     if not isinstance(noeud_expressions, tuple) or noeud_expressions[0] != "exp":
         raise TypeError(f"Noeud arguments invalide : {noeud_expressions!r}")
 
