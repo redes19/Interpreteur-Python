@@ -284,9 +284,14 @@ def p_instruction_composee_while(production):
     production[0] = ("while", production[3], production[5])
 
 
-def p_instruction_for_interne_affectation(production):
-    "instruction_for : NAME EGAL expression"
-    production[0] = ("assign", production[1], production[3])
+def p_instruction_for(production):
+    """instruction_for : NAME EGAL expression
+                       | NAME PLUSPLUS
+    """
+    if len(production) == 4:
+        production[0] = ("assign", production[1], production[3])
+    else:
+        production[0] = ("++", production[1])
 
 
 def p_instruction_composee_for(production):
@@ -483,6 +488,8 @@ def est_definition_fonction(instruction: Any) -> bool:
     if not isinstance(instruction, tuple) or len(instruction) != 3:
         return False
     if not isinstance(instruction[0], str):
+        return False
+    if instruction[0] in {"if", "while", "for", "print", "assign", "++", "push", "pop_inst", "assign_index_tab"}:
         return False
     corps = instruction[2]
     return corps == "empty" or (isinstance(corps, tuple) and corps[0] == "inst")
