@@ -476,10 +476,7 @@ def lire_variable(nom: str) -> Any:
 
 
 def ecrire_variable(nom: str, valeur: Any) -> None:
-    for contexte in reversed(pile_des_contextes):
-        if nom in contexte:
-            contexte[nom] = valeur
-            return
+    # Toujours écrire dans le contexte courant (le dernier de la pile)
     pile_des_contextes[-1][nom] = valeur
 
 
