@@ -25,7 +25,7 @@ except Exception:
 # ---------------------------------------------------------------------------
 
 PREFIXE_CONSOLE = "calc > "
-AFFICHER_GRAPHVIZ = False  # Doit rester désactivé par défaut (sujet)
+AFFICHER_GRAPHVIZ = True  # Doit rester désactivé par défaut (sujet)
 
 
 # ---------------------------------------------------------------------------
@@ -151,6 +151,7 @@ def p_start(production):
     "start : liste_instructions"
     liste_complete = production[1]
 
+    # séparation des fonctions et du main
     arbre_fonctions, arbre_main = separer_fonctions_et_main(liste_complete)
 
     # Le schéma du cours montre toujours un nœud "fonction"
@@ -481,6 +482,7 @@ def ecrire_variable(nom: str, valeur: Any) -> None:
 
 
 def est_definition_fonction(instruction: Any) -> bool:
+    
     # Définition : (nom, param_chain ou 'empty', corps_inst)
     if not isinstance(instruction, tuple) or len(instruction) != 3:
         return False
@@ -561,6 +563,7 @@ def extraire_arguments_depuis_exp_chain(noeud_expressions: Any) -> List[Any]:
 
 
 def enregistrer_fonctions(arbre_fonctions: Any) -> None:
+    print("arbre_fonctions ",arbre_fonctions)
     if arbre_fonctions == "empty":
         return
     if not isinstance(arbre_fonctions, tuple) or arbre_fonctions[0] != "fonction":
@@ -745,7 +748,7 @@ def evaluer_expression(arbre: Any) -> Any:
         # appel sans arguments
         liste_parametres = extraire_parametres_depuis_param_chain(noeud_parametres)
         if len(liste_parametres) != 0:
-            raise TypeError(f"Fonction {nom_fonction!r} attend des paramètres.")
+            raise TypeError(f"Fonction {nom_fonction!r} n'attend pas de paramètre.")
         pile_des_contextes.append({})
         try:
             executer_instruction(corps)
